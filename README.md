@@ -94,6 +94,17 @@ Build one page that:
 
 The page must not crash when the API answers with an error or is slow.
 
+The completed web page is available at `/`. Enter an existing home ID to load its
+bills, shares, and outstanding balances. Unpaid shares can be paid from the page,
+and the selected home ID is retained in browser storage.
+
+The API also exposes:
+
+#### `GET /api/homes/:homeId/bills`
+
+- Success: `200` `{ bills: [{ id, homeId, title, totalCents, shares: [...] }] }`
+- Errors: `404` home not found
+
 ## Cases you must handle
 
 You must handle these cases and talk about them in your video:
@@ -115,7 +126,7 @@ pnpm install
 pnpm dev          # api on :8787 and web on :5173
 ```
 
-Open http://localhost:5173. The starter page shows a title. `/api/health` returns `{ "status": "ok" }`.
+Open http://localhost:5173 to use the bill dashboard. `/api/health` returns `{ "status": "ok" }`.
 
 ```bash
 pnpm test         # run the visible tests in api/test
@@ -134,6 +145,25 @@ When you change `api/wrangler.jsonc`, refresh the `Env` types:
 ```bash
 pnpm --filter bill-splitter-api cf-typegen
 ```
+
+## Decisions
+
+1. **Store money as integer cents.** This avoids floating-point rounding errors
+   and makes validation, splitting, and balance aggregation deterministic.
+2. **Protect relationships in the database and create bills atomically.** Named
+   constraints and composite foreign keys prevent cross-home records, while one
+   D1 batch inserts the bill and all of its shares together.
+3. **Use a conditional payment update with an idempotency key.** Updating only
+   unpaid shares makes concurrent requests safe; retries with the original key
+   return the stored payment, while a different key receives a conflict.
+
+## AI tool disclosure
+
+ChatGPT was used as a senior-engineering mentor for architecture discussions,
+implementation guidance, review, and verification planning. Antigravity was used
+as the repository inspection and implementation assistant to edit the code,
+execute tests, run quality checks, and perform browser verification. The final
+implementation was reviewed and verified locally by the candidate.
 
 ## Rules for the tests
 
