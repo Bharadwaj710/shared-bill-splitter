@@ -160,7 +160,7 @@ pnpm --filter bill-splitter-api cf-typegen
 ## AI tool disclosure
 
 ChatGPT was used as a senior-engineering mentor for architecture discussions,
-implementation guidance, review, and verification planning. Antigravity was used
+implementation guidance, review, and verification planning. Copilot was used
 as the repository inspection and implementation assistant to edit the code,
 execute tests, run quality checks, and perform browser verification. The final
 implementation was reviewed and verified locally by the candidate.
