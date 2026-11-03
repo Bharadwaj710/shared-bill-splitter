@@ -146,16 +146,19 @@ When you change `api/wrangler.jsonc`, refresh the `Env` types:
 pnpm --filter bill-splitter-api cf-typegen
 ```
 
-## Decisions
+# Decisions
 
-1. **Store money as integer cents.** This avoids floating-point rounding errors
-   and makes validation, splitting, and balance aggregation deterministic.
-2. **Protect relationships in the database and create bills atomically.** Named
-   constraints and composite foreign keys prevent cross-home records, while one
-   D1 batch inserts the bill and all of its shares together.
-3. **Use a conditional payment update with an idempotency key.** Updating only
-   unpaid shares makes concurrent requests safe; retries with the original key
-   return the stored payment, while a different key receives a conflict.
+### 1. Protect data integrity and financial correctness
+
+I chose to represent monetary values as integer cents rather than floating-point amounts to avoid precision errors. I also used composite foreign keys to ensure that a bill share cannot reference a member and bill belonging to different homes. Bill and share creation uses a single D1 batch so related records are created atomically.
+
+### 2. Make payment processing reliable and predictable
+
+I implemented payments using conditional SQL updates and idempotency keys to prevent duplicate payments during retries or concurrent requests. For uneven bill splits, remaining cents are distributed according to member insertion order, ensuring that every cent is allocated consistently.
+
+### 3. Calculate outstanding balances directly in SQL
+
+I used SQL aggregation with `LEFT JOIN`, `SUM()` and `COALESCE()` to calculate each member's unpaid balance. This avoids fetching individual shares for application-side aggregation while ensuring that members with no unpaid shares are still returned with a zero balance.
 
 ## AI tool disclosure
 
